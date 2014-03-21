@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" data-app-id="YOUR_CLIENT_ID_HERE" src="https://assets.yammer.com/assets/platform_js_sdk.js"></script>
+</head>
+
+<body onload="login()">
+    <script>
+        yam.connect.embedFeed({
+            container: '#embedded-feed',
+            feedType: 'open-graph',
+            feedId: '',
+            config: {
+                use_sso: false,
+                header: true,
+                footer: true,
+                showOpenGraphPreview: false
+
+            },
+            objectProperties: {
+                url: '',
+                type: 'page'
+            }
+        });
+
+        yam.connect.actionButton({
+            container: "#embedded-follow",
+            action: "follow"
+        });
+
+        yam.connect.actionButton({
+            container: "#embedded-like",
+            action: "like"
+        });
+        yam.config({
+            debug: true
+        });
+
+        function logout() {
+            yam.getLoginStatus(
+                function (response) {
+                    if (response.authResponse) {
+                        yam.logout(function (response) {
+                            toggleLoginStatus(false);
+                            location.reload();
+                        })
+                    }
+                }
+            );
+        }
+
+
+        function toggleLoginStatus(loggedIn) {
+            if (loggedIn) {
+                $('.not-logged-in').hide();
+                $('.logged-in').show('slow');
+            } else {
+                $('.not-logged-in').show('slow');
+                $('.logged-in').hide();
+            }
+        }
+
+        function displayAuthResult(authResult) {
+            console.log("AuthResult", authResult); //print user information to the console
+
+            $('#yammer-login').innerHTML = 'Welcome to Yammer!';
+            toggleLoginStatus(true);
+
+            $('#authResult').html('Auth Result:<br/>');
+            for (var field in authResult) {
+                $('#authResult').append(' ' + field + ': ' +
+                    authResult[field] + '<br/>');
+            }
+            $('#authOps').show('slow');
+
+        }
+
+        function getCurrentUser() {
+            yam.platform.request({
+                // yam.request({
+                url: "users/current.json", //this is one of many REST endpoints that are available
+                method: "GET",
+                data: {},
+                success: function (user) { //print message response information to the console
+                    console.log("User request was successful.");
+                    console.dir(user);
+                    toggleLoginStatus(true);
+                    $('#authResult').html('User Result:<br/>');
+                    for (var field in user) {
+                        $('#authResult').append(' ' + field + ': ' +
+                            escape(user[field]) + '<br/>');
+                    }
+
+                },
+                error: function (user) {
+                    console.error("There was an error with the request.");
+                }
+            });
+
+        }
+
+        function getCurrentGroups() {
+            yam.platform.request({
+                url: "groups.json?mine=1",
+                method: "GET",
+                data: {},
+                success: function (group) {
+                    $mygroup = "";
+                    for ($i = 0; $i < group.length; $i++) {
+                        $mygroup += '<img src="' + group[$i].mugshot_url + '">' + " " + group[$i].full_name + "," + "<br>";
+
+                    }
+                    $("#yammer-group-button").html($mygroup);
+                },
+
+                error: function (group) {
+                    console.error("There was an error with the request.");
+                }
+            });
+        }
+
+        function login() {
+            console.log("Trigger setAuthToken");
+            yam.platform.setAuthToken({
+                    token: localStorage.getItem(1)
+                },
+                function (response) {
+                    if (response.authResponse) {
+                        console.log("Logged in and got code");
+                        displayAuthResult(response.access_token);
+                    } else {
+                        console.log("Not logged in.");
+
+                    }
+                });
+        };
+
+        function logout() {
+            yam.getLoginStatus(
+                function (response) {
+                    if (response.authResponse) {
+                        yam.logout(function (response) {
+                            console.log("User was logged out");
+                            location.reload();
+                        })
+                    } else {
+                        toggleLoginStatus(false);
+                    }
+                }
+            );
+        }
+
+        $(document).ready(function () {
+
+            $('#disconnect').click(logout);
+            $('#yammer-user-button').click(getCurrentUser);
+            $('#yammer-group-button').click(getCurrentGroups);
+
+        });
+    </script>
+    <div id='page'>
+        <div>
+            <h2>JS SDK</h2>
+            <button id="yammer-user-button">Get Current User</button>
+            <button id="yammer-group-button">Get Current Groups</button>
+
+        </div>
+        <a name="setauthtoken" class="anchor" href="#setauthtoken"><span class="mini-icon mini-icon-link"></span></a>setAuthToken</h2>
+
+        <pre><code>yam.platform.setAuthToken(token, [callback])
+</code></pre>
+
+        <p>Sets a specific auth token string which may have been stored locally or which has been retrieved through the <code>/api/v1/oauth/tokens.json</code> endpoint for example. This token will be used blindly for subsequent <code>yam.platform.request</code> calls.
+            <br>Alternatively if a callback is provided the token will be checked for validity against the API. If the token is not valid the user will be effectively left in a logged out state.</p>
+
+        <p>This method calls the endpoint <a href="https://api.yammer.com/api/v1/oauth2/token.json">https://api.yammer.com/api/v1/oauth2/token.json</a>
+        </p>
+        <div class="logged-in" style="display:none">
+            <p>User is now signed in to the app using Yammer</p>
+            <button id="disconnect" class="yj-btn yj-btn-alt">Log out from your Yammer account</button>
+        </div>
+        <div class="logged-in" style="display:none">
+            <h2>Authentication Logs</h2>
+            <pre id="authResult"></pre>
+        </div>
+    </div>
+    <div id="embedded-follow"></div>
+    <div id="embedded-like"></div>
+    <div id="embedded-feed" style="height:400px;width:500px;"></div>
+    <script>
+        yam.connect.embedFeed({
+            container: '#embedded-feed',
+            feedType: 'open-graph',
+            feedId: '',
+            config: {
+                use_sso: false,
+                header: true,
+                footer: true,
+                showOpenGraphPreview: false
+
+            },
+            objectProperties: {
+                url: '',
+                type: 'page'
+            }
+        });
+
+        yam.connect.actionButton({
+            container: "#embedded-follow",
+            action: "follow"
+        });
+
+        yam.connect.actionButton({
+            container: "#embedded-like",
+            action: "like"
+        });
+    </script>
+
+</body>
+
+</html>
