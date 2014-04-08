@@ -39,10 +39,10 @@
         });
 
         function logout() {
-            yam.getLoginStatus(
+            yam.platform.getLoginStatus(
                 function (response) {
                     if (response.authResponse) {
-                        yam.logout(function (response) {
+                        yam.platform.logout(function (response) {
                             toggleLoginStatus(false);
                             location.reload();
                         })
@@ -124,7 +124,7 @@
 
         function login() {
             console.log("Trigger LoginStatus");
-            yam.getLoginStatus(
+            yam.platform.getLoginStatus(
                 function (response) {
                     if (response.authResponse) {
                         console.log("Logged in");
@@ -132,7 +132,7 @@
                         localStorage.setItem(1, JSON.stringify(response.access_token.token).replace(/"/g, ""));
                     } else {
                         console.log("Not logged in.  Going to login now.");
-                        yam.login(function (response) { //prompt user to login and authorize your app, as necessary
+                        yam.platform.login(function (response) { //prompt user to login and authorize your app, as necessary
                             if (response.authResponse) {
                                 displayAuthResult(response.access_token);
                                 localStorage.setItem(1, JSON.stringify(response.access_token.token).replace(/"/g, ""));
@@ -145,10 +145,10 @@
         }
 
         function logout() {
-            yam.getLoginStatus(
+            yam.platform.getLoginStatus(
                 function (response) {
                     if (response.authResponse) {
-                        yam.logout(function (response) {
+                        yam.platform.logout(function (response) {
                             console.log("User was logged out");
                             location.reload();
                         })
