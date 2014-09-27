@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" data-app-id="kIjSVqLn0EQxWRM7kZcUQ" src="https://assets.yammer.com/assets/platform_js_sdk.js"></script>
+</head>
+
+<body>
+    <script>
+        function logout() {
+            yam.platform.getLoginStatus(
+                function (response) {
+                    if (response.authResponse) {
+                        yam.platform.logout(function (response) {
+                            toggleLoginStatus(false);
+                            location.reload();
+                        })
+                    }
+                }
+            );
+        }
+
+
+        function toggleLoginStatus(loggedIn) {
+            if (loggedIn) {
+                $('.not-logged-in').hide();
+                $('.logged-in').show('slow');
+            } else {
+                $('.not-logged-in').show('slow');
+                $('.logged-in').hide();
+            }
+        }
+
+        function displayAuthResult(authResult) {
+            console.log("AuthResult", authResult); //print user information to the console
+
+            $('#yammer-login').innerHTML = 'Welcome to Yammer!';
+            toggleLoginStatus(true);
+
+            $('#authResult').html('Auth Result:<br/>');
+            for (var field in authResult) {
+                $('#authResult').append(' ' + field + ': ' +
+                    authResult[field] + '<br/>');
+            }
+            $('#authOps').show('slow');
+
+        }
+
+        function postActivity() {
+            yam.platform.request({
+                // yam.request({
+                url: "activity.json", //this is one of many REST endpoints that are available
+                method: "POST",
+                data: {
+                    "activity": {
+                      "actor": {"name": "Brian Davis", "email": "bdavis@salmonellaville.com"},
+                      "action": "create",
+                      "object": {
+                        "url": "https://www.news.google.com",
+                        "image":"https://a248.e.akamai.net/assets.github.com/images/modules/dashboard/octofication.png",
+                        "description":"Testing Activity STREAM",
+                        "title":"yam-git-OG"
+                      },
+                    "private": "false",
+                    "message": "testing commit"
+                    }
+                },
+                success: function (activity) { //print message response information to the console
+                    console.log("Activity request was successful.");
+                    console.dir(activity);
+                    $('#authResult').html('User Result:<br/>');
+                    for (var field in activity) {
+                        $('#authResult').append(' ' + field + ': ' +
+                            escape(activity[field]) + '<br/>');
+                    }
+
+                },
+                error: function (activity) {
+                    console.error("There was an error with the request.");
+                }
+            });
+
+        }
+
+        function getCurrentGroups() {
+            yam.platform.request({
+                // yam.request({
+                url: "groups.json?mine=1",
+                method: "GET",
+                data: {},
+                success: function (group) {
+                    $mygroup = "";
+                    for ($i = 0; $i < group.length; $i++) {
+                        $mygroup += '<img src="' + group[$i].mugshot_url + '">' + " " + group[$i].full_name + "," + "<br>";
+
+                    }
+                    $("#current-groups").html($mygroup);
+                },
+
+                error: function (group) {
+                    console.error("There was an error with the request.");
+                }
+            });
+        }
+
+        function login() {
+            console.log("Trigger LoginStatus");
+            yam.platform.getLoginStatus(
+                function (response) {
+                    if (response.authResponse) {
+                        console.log("Logged in");
+                        displayAuthResult(response.access_token);
+                        localStorage.setItem(1, JSON.stringify(response.access_token.token).replace(/"/g, ""));
+                    } else {
+                        console.log("Not logged in.  Going to login now.");
+                        yam.platform.login(function (response) { //prompt user to login and authorize your app, as necessary
+                            if (response.authResponse) {
+                                displayAuthResult(response.access_token);
+                                localStorage.setItem(1, JSON.stringify(response.access_token.token).replace(/"/g, ""));
+                            }
+                        });
+                    }
+                }
+            );
+
+        }
+
+        function logout() {
+            yam.platform.getLoginStatus(
+                function (response) {
+                    if (response.authResponse) {
+                        yam.platform.logout(function (response) {
+                            console.log("User was logged out");
+                            location.reload();
+                        })
+                    } else {
+                        toggleLoginStatus(false);
+                    }
+                }
+            );
+        }
+
+        $(document).ready(function () {
+
+            $('#disconnect').click(logout);
+            $('#yammer-js-login-button').click(login);
+            $('#yammer-user-button').click(postActivity);
+            $('#yammer-group-button').click(getCurrentGroups);
+
+        });
+    </script>
+    <div id='page'>
+        <div>
+            <h2>JS SDK</h2>
+            <button id="yammer-js-login-button">JS Login</button>
+            <button id="yammer-user-button">Get Current User</button>
+            <button id="yammer-group-button">Get Current Groups</button>
+            <div id="current-groups"></div>
+
+        </div>
+
+        <div class="logged-in" style="display:none">
+            <p>User is now signed in to the app using Yammer</p>
+            <button id="disconnect" class="yj-btn yj-btn-alt">Log out from your Yammer account</button>
+        </div>
+        <div class="logged-in" style="display:none">
+            <h2>Authentication Logs</h2>
+            <pre id="authResult"></pre>
+        </div>
+    </div>
+</body>
+
+</html>
